@@ -31,8 +31,8 @@ func RunTelegramBot(token string, imgSrv ImageServer) error {
 		b.Handle("/"+bucket, func(m *tb.Message) {
 			img := imgSrv.GetRandomImage(bucket)
 
-			log.Printf("user: %+v", m.Sender)
-			log.Printf("image: %+v", img)
+			log.Printf("[telegram] user: %+v", m.Sender)
+			log.Printf("[telegram] image: %+v", img)
 
 			if _, err := b.Reply(m, &tb.Photo{
 				File:    tb.File{FileLocal: img.PhotoPath},

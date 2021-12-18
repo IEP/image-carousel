@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/andersfylling/disgord"
 	"github.com/andersfylling/disgord/std"
@@ -46,14 +47,26 @@ func RunDiscordBot(token string, imgSrv ImageServer) error {
 		msg := data.Message
 
 		if bucketFilter[msg.Content] {
-			if _, err := msg.Reply(context.Background(), s, msg.Content); err != nil {
-				log.Println("msg.Reply", err)
+			img := imgSrv.GetRandomImage(msg.Content)
+
+			log.Printf("[discord] user: %+v", data.Message.Author)
+			log.Printf("[discord] image: %+v", img)
+
+			f, err := os.Open(img.PhotoPath)
+			if err != nil {
+				log.Println("os.Open:", err)
+			}
+			defer f.Close()
+
+			if _, err := msg.Reply(context.Background(), s, &disgord.CreateMessageParams{
+				Content: img.Description,
+				Files: []disgord.CreateMessageFileParams{
+					{Reader: f, FileName: "nft.jpg", SpoilerTag: false},
+				},
+			}); err != nil {
+				log.Println("msg.Reply:", err)
 			}
 		}
-	})
-
-	client.Gateway().BotReady(func() {
-		log.Println("Discord bot is ready!")
 	})
 
 	return nil
