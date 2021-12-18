@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"math/rand"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -19,7 +22,16 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	if err := RunTelegramBot(cfg.TelegramToken, imgServ); err != nil {
+	g, _ := errgroup.WithContext(context.Background())
+
+	g.Go(func() error {
+		return RunTelegramBot(cfg.TelegramToken, imgServ)
+	})
+	g.Go(func() error {
+		return RunDiscordBot(cfg.DiscordToken, imgServ)
+	})
+
+	if err := g.Wait(); err != nil {
 		log.Fatalln(err)
 	}
 }
