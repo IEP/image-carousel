@@ -14,7 +14,7 @@ func TestStaticImageServer(t *testing.T) {
 		names := s.GetBucketsName()
 		t.Logf("bucket names: %+v", names)
 		size := len(names)
-		if size != 3 { // 3 is hardcoded
+		if size != 3 { // hardcoded number of buckets
 			t.Errorf("len(s.GetBucketsName) != 3: %d", size)
 		}
 	})

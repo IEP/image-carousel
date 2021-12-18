@@ -6,11 +6,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Config holder that consists of bot token based on the platform
 type Config struct {
 	TelegramToken string `mapstructure:"telegram_token"`
 	DiscordToken  string `mapstructure:"discord_token"`
 }
 
+// LoadConfig from provided config name
 func LoadConfig(name string) (*Config, error) {
 	viper.SetConfigName(name)
 	viper.AddConfigPath(".")

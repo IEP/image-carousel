@@ -9,6 +9,7 @@ import (
 	"sync"
 )
 
+// StaticImageServer implements ImageServer
 type StaticImageServer struct {
 	Metadata   map[string][]Image
 	BucketSize map[string]int
@@ -18,7 +19,7 @@ type StaticImageServer struct {
 	mu sync.Mutex
 }
 
-// NewStaticImageServer based on metadata.json
+// NewStaticImageServer based on metadata.json with basePath expressing the location of metadata.json
 func NewStaticImageServer(basePath string) (ImageServer, error) {
 	metadataPath := path.Join(basePath, "metadata.json")
 	content, err := ioutil.ReadFile(metadataPath)
@@ -47,12 +48,15 @@ func NewStaticImageServer(basePath string) (ImageServer, error) {
 	}, nil
 }
 
+// check StaticImageServer implementation whether it satisfy ImageServer interface
 var _ ImageServer = &StaticImageServer{}
 
+// GetBucketsName list
 func (s *StaticImageServer) GetBucketsName() []string {
 	return s.BucketList
 }
 
+// GetRandomImage based on the bucket name choosen
 func (s *StaticImageServer) GetRandomImage(bucketName string) Image {
 	s.mu.Lock()
 	defer s.mu.Unlock()

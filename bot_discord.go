@@ -9,7 +9,9 @@ import (
 	"github.com/andersfylling/disgord/std"
 )
 
+// RunDiscordBot instance with provided token and image server
 func RunDiscordBot(token string, imgSrv ImageServer) error {
+	// get buckets information
 	buckets := imgSrv.GetBucketsName()
 	bucketFilter := make(map[string]bool)
 	for _, bucketName := range buckets {
@@ -18,6 +20,7 @@ func RunDiscordBot(token string, imgSrv ImageServer) error {
 
 	const prefix = "!"
 
+	// initiate discord bot instance
 	client := disgord.New(disgord.Config{
 		BotToken: token,
 		RejectEvents: []string{
@@ -36,9 +39,11 @@ func RunDiscordBot(token string, imgSrv ImageServer) error {
 		_ = client.Gateway().Connect()
 	}()
 
+	// add filter
 	filter, _ := std.NewMsgFilter(context.Background(), client)
 	filter.SetPrefix(prefix)
 
+	// add message handler
 	client.Gateway().WithMiddleware(
 		filter.NotByBot,
 		filter.HasPrefix,
@@ -46,18 +51,21 @@ func RunDiscordBot(token string, imgSrv ImageServer) error {
 	).MessageCreate(func(s disgord.Session, data *disgord.MessageCreate) {
 		msg := data.Message
 
+		// check whether the requested bucket is exists
 		if bucketFilter[msg.Content] {
 			img := imgSrv.GetRandomImage(msg.Content)
 
 			log.Printf("[discord] user: %+v", data.Message.Author)
 			log.Printf("[discord] image: %+v", img)
 
+			// get file that will be fed as io.Reader in Files
 			f, err := os.Open(img.PhotoPath)
 			if err != nil {
 				log.Println("os.Open:", err)
 			}
 			defer f.Close()
 
+			// send message with embedded image
 			if _, err := msg.Reply(context.Background(), s, &disgord.CreateMessageParams{
 				Content: img.Description,
 				Files: []disgord.CreateMessageFileParams{

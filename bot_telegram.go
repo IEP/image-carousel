@@ -8,7 +8,9 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+// RunTelegramBot with provided token and image server
 func RunTelegramBot(token string, imgSrv ImageServer) error {
+	// initate discord bot instance
 	b, err := tb.NewBot(tb.Settings{
 		Token: token,
 		Poller: &tb.LongPoller{
@@ -23,12 +25,14 @@ func RunTelegramBot(token string, imgSrv ImageServer) error {
 	commands := make([]tb.Command, 0)
 
 	for _, bucket := range buckets {
+		// add new command and handler
 		bucket := bucket
 		commands = append(commands, tb.Command{
 			Text:        bucket,
 			Description: fmt.Sprintf("Get random image from '%s' bucket", bucket),
 		})
 		b.Handle("/"+bucket, func(m *tb.Message) {
+			// get random image based on the bucket name
 			img := imgSrv.GetRandomImage(bucket)
 
 			log.Printf("[telegram] user: %+v", m.Sender)
@@ -43,6 +47,7 @@ func RunTelegramBot(token string, imgSrv ImageServer) error {
 		})
 	}
 
+	// set the command and start the bot
 	_ = b.SetCommands(commands)
 	b.Start()
 
