@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"math/rand"
 	"os"
 
 	"github.com/andersfylling/disgord"
@@ -52,6 +53,30 @@ func RunDiscordBot(token string, imgSrv ImageServer) error {
 		msg := data.Message
 
 		// check whether the requested bucket is exists
+		if msg.Content == "random" {
+			temp := imgSrv.GetBucketsName()
+			idx := rand.Intn(len(temp))
+			img := imgSrv.GetRandomImage(temp[idx-1])
+			log.Printf("[discord] user: %+v", data.Message.Author)
+			log.Printf("[discord] image: %+v", img)
+
+			// get file that will be fed as io.Reader in Files
+			f, err := os.Open(img.PhotoPath)
+			if err != nil {
+				log.Println("os.Open:", err)
+			}
+			defer f.Close()
+
+			// send message with embedded image
+			if _, err := msg.Reply(context.Background(), s, &disgord.CreateMessageParams{
+				Content: img.Description,
+				Files: []disgord.CreateMessageFileParams{
+					{Reader: f, FileName: "nft.jpg", SpoilerTag: false},
+				},
+			}); err != nil {
+				log.Println("msg.Reply:", err)
+			}
+		}
 		if bucketFilter[msg.Content] {
 			img := imgSrv.GetRandomImage(msg.Content)
 
