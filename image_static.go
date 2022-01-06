@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -16,7 +17,9 @@ type StaticImageServer struct {
 	BucketList []string
 	BasePath   string
 
-	mu sync.Mutex
+	bucketListWithoutRandom []string
+
+	bucketOnce sync.Once
 }
 
 // NewStaticImageServer based on metadata.json with basePath expressing the location of metadata.json
@@ -36,9 +39,14 @@ func NewStaticImageServer(basePath string) (ImageServer, error) {
 	list := make([]string, 0)
 
 	for k, v := range data {
+		if k == "random" {
+			return nil, errors.New("bucket name 'random' is reserved")
+		}
 		size[k] = len(v)
 		list = append(list, k)
 	}
+
+	list = append(list, "random") // random pseudo-bucket
 
 	return &StaticImageServer{
 		Metadata:   data,
@@ -56,10 +64,35 @@ func (s *StaticImageServer) GetBucketsName() []string {
 	return s.BucketList
 }
 
+func (s *StaticImageServer) getBucketsNameWithoutRandom() []string {
+	s.bucketOnce.Do(func() {
+		s.bucketListWithoutRandom = make([]string, 0)
+		for _, b := range s.GetBucketsName() {
+			b := b
+			if b == "random" {
+				continue
+			}
+			s.bucketListWithoutRandom = append(s.bucketListWithoutRandom, b)
+		}
+	})
+
+	return s.bucketListWithoutRandom
+}
+
 // GetRandomImage based on the bucket name choosen
 func (s *StaticImageServer) GetRandomImage(bucketName string) Image {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	// handle random bucket
+	if bucketName == "random" {
+		buckets := s.getBucketsNameWithoutRandom()
+		idx := rand.Intn(len(buckets))
+		bucketName = buckets[idx]
+	}
+
+	// handle invalid bucket
+	bucketLen := s.BucketSize[bucketName]
+	if bucketLen == 0 {
+		return Image{}
+	}
 
 	idx := rand.Intn(s.BucketSize[bucketName])
 	img := s.Metadata[bucketName][idx]

@@ -35,6 +35,11 @@ func RunTelegramBot(token string, imgSrv ImageServer) error {
 			// get random image based on the bucket name
 			img := imgSrv.GetRandomImage(bucket)
 
+			if img.Description == "" && img.PhotoPath == "" {
+				log.Println("image not found")
+				return
+			}
+
 			log.Printf("[telegram] user: %+v", m.Sender)
 			log.Printf("[telegram] image: %+v", img)
 
