@@ -55,6 +55,11 @@ func RunDiscordBot(token string, imgSrv ImageServer) error {
 		if bucketFilter[msg.Content] {
 			img := imgSrv.GetRandomImage(msg.Content)
 
+			if img.Description == "" && img.PhotoPath == "" {
+				log.Println("image not found")
+				return
+			}
+
 			log.Printf("[discord] user: %+v", data.Message.Author)
 			log.Printf("[discord] image: %+v", img)
 
